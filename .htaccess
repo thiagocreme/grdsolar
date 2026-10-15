@@ -1,0 +1,64 @@
+# GRD Solar — regras de segurança e desempenho para a HostGator (Apache)
+# Vai na pasta public_html junto com o index.html.
+
+# ---------- HTTPS obrigatório ----------
+# Ative antes o SSL grátis (AutoSSL) no cPanel; depois disso, todo acesso http vai para https.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Um endereço só: grdsolar.com.br vai para www.grdsolar.com.br (o mesmo do sitemap e das tags)
+  RewriteCond %{HTTP_HOST} ^grdsolar\.com\.br$ [NC]
+  RewriteRule ^ https://www.grdsolar.com.br%{REQUEST_URI} [L,R=301]
+
+  # /index.html vira só / (evita dois endereços para a mesma página)
+  RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+  RewriteRule ^index\.html$ / [L,R=301]
+
+  # Bloqueia arquivos que nunca deveriam estar públicos (caso sejam enviados por engano)
+  RewriteRule (^|/)\.(?!well-known/) - [F,L]
+  RewriteRule \.(mjs|md|txt\.bak|log|sql|zip|env|ini|sh|ps1)$ - [F,L]
+  RewriteRule ^(Imagens|\.claude|node_modules)(/|$) - [F,L]
+</IfModule>
+
+# ---------- Não listar o conteúdo das pastas ----------
+Options -Indexes
+
+# ---------- Página de erro ----------
+ErrorDocument 404 /404.html
+
+# ---------- Cabeçalhos de segurança ----------
+<IfModule mod_headers.c>
+  # Navegador só acessa o site por HTTPS durante 1 ano
+  Header always set Strict-Transport-Security "max-age=31536000"
+  # Não deixa o navegador "adivinhar" o tipo dos arquivos
+  Header always set X-Content-Type-Options "nosniff"
+  # Impede que outro site coloque esta página dentro de um iframe (golpe de clique falso)
+  Header always set X-Frame-Options "SAMEORIGIN"
+  # Envia só o domínio, nunca o endereço completo, para outros sites
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Desliga recursos do navegador que o site não usa
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+  # Só carrega scripts, fontes e mapas das origens que o site realmente usa
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://www.googletagmanager.com 'sha256-Du+OJKJSbdUgz5nrHeWWINvez6XKDDU/tyj/5c2uvwo='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; frame-src https://www.google.com https://maps.google.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+  Header always unset X-Powered-By
+</IfModule>
+ServerSignature Off
+
+# ---------- Desempenho: compressão e cache ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript image/svg+xml
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType text/javascript "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>

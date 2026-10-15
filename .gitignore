@@ -1,0 +1,14 @@
+# Material bruto do cliente (propostas, Instagram salvo, prints): não vai para o GitHub
+Imagens/
+
+# Pacote gerado para enviar à HostGator
+publicar-hostgator/
+*.zip
+
+# Configuração local do editor/assistente
+.claude/
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
